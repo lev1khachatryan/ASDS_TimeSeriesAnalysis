@@ -39,7 +39,8 @@ shinyServer(
     
     output$myplot1 <- renderPlot({
       p1 <- ggplot(data1(), aes(t, x), xlab=format(t, "%Y")) + geom_line()
-      p2 <- ggplot(data2(), aes(t))+ geom_point(aes(y=x)) + xlim(0, 5)
+      # p2 <- ggplot(data2(), aes(t))+ geom_point(aes(y=x)) + xlim(0, 5)
+      p2 <- acf(data1(), x)
       grid.arrange(grobs=list(p1, p2), ncol = 2)
     }
     )
@@ -53,3 +54,7 @@ shinyServer(
     
   }
 )
+
+
+
+pnorm(2.5) - pnorm(-0.5)

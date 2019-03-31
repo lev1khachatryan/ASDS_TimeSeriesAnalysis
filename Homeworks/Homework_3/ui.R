@@ -8,7 +8,7 @@ rm(list = ls())
 shinyUI(fluidPage(
   
   # Header or title Panel 
-  titlePanel(h4('Demostration of the Spurious Regression with tabs', align = "center")),
+  titlePanel(h4('Demostration of the AR(1) and MA(1) processes with tabs', align = "center")),
   
   # Sidebar panel
   sidebarPanel(

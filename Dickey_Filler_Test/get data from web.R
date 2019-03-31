@@ -1,0 +1,8 @@
+library(quantmod) 
+watchlist=c("AAPL","IBM","C","CSCO")
+getSymbols(watchlist,from="2015-01-02",to="2016-12-31")
+chartSeries(C)
+chartSeries(C,subset = '2016-6::2016-12') 
+barChart(C,subset = '2016-6::2016-12')
+head(AAPL)
+chartSeries(AAPL[,6]) 

@@ -1,0 +1,41 @@
+---
+title: "Quiz_2"
+author: "Levon Khachatryan"
+date: "2019 03 28"
+output: html_document
+---
+```{r setup, include=FALSE}
+chooseCRANmirror(graphics=FALSE, ind=1)
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br />
+<br />
+**Recall the task**
+<br />
+<br />
+We have a time series. Check it's graph and determine what kind of time series we have : AR or MA.
+<br />
+<br />
+First of all we should install and import the appropriate library with these commands:
+```{r}
+# if (!require(quantmod)) { install.packages("quantmod"); library(quantmod) }
+# if (!require(zoo)) { install.packages("zoo"); library(zoo) }
+# if (!require(xts)) { install.packages("xts"); library(xts) }
+# if (!require(tseries)) { install.packages("tseries"); library(tseries) }
+# if (!require(Quandl)) { install.packages("Quandl"); library(Quandl) }
+# if (!require(urca)) { install.packages("urca"); library(urca) }
+```
+Now let's import neccessary time series
+```{r}
+watchlist=c("AAPL","IBM","C","CSCO")
+getSymbols(watchlist,from="2015-01-02",to="2016-12-31")
+# getSymbols("IBM",from="2015-01-02",to="2016-12-31")
+# chartSeries(IBM)
+```
+So the graph of our time series is the following
+```{r}
+# chartSeries(IBM)
+```
+
+
+
