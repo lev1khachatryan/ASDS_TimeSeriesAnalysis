@@ -21,7 +21,7 @@ pacf(rtn)
 ## Arima model
 ##################################
 m1 <- arima(rtn,order=c(0,0,2))
-m1
+# m1
 acf(m1$residuals)
 acf(m1$residuals^2)
 pacf(m1$residuals)
@@ -68,7 +68,7 @@ summary(m1)
 m1=garchFit(~arma(1,1)+garch(3,0),data=intc,trace=F)
 summary(m1)
 
-plot(m1)
+# plot(m1)
 
 m2=garchFit(~garch(1,0),data=intc,cond.dist="std",trace=F)
 summary(m2)
@@ -102,3 +102,4 @@ predict(m2,6)
 
 m2=garchFit(~garch(1,1),data=intc,cond.dist="std",trace=F)
 summary(m2)
+
