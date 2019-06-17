@@ -1,6 +1,6 @@
-install.packages('shiny')
-install.packages('tidyverse')
-install.packages('gridExtra')
+# install.packages('shiny')
+# install.packages('tidyverse')
+# install.packages('gridExtra')
 
 library(shiny) # Load shiny package
 library(tidyverse)

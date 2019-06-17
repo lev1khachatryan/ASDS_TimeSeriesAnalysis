@@ -2,7 +2,7 @@
 # install.packages("shiny")
 
 library(shiny) # load the shiny package
-rm(list = ls())
+# rm(list = ls())
 
 # Define UI for application
 shinyUI(fluidPage(
