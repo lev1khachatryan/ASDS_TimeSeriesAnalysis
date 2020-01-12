@@ -1,0 +1,65 @@
+---
+title: "Multiple Linear Regresssion"
+author: "R. Gevorgyan"
+date: "October 21, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data
+Here, we employ the CPS1988 data frame collected in the March 1988
+Current Population Survey (CPS) by the US Census Bureau and analyzed
+by Bierens and Ginther (2001).
+
+These are cross-section data on males aged 18 to 70 with positive
+annual income greater than US$ 50 in 1992 who are not self-employed
+or working without pay.
+
+```{r echo=T, results='hide', message=FALSE, warning=FALSE}
+library(AER)
+```
+
+```{r }
+
+data("CPS1988")
+summary(CPS1988)
+```
+
+```
+* wage - the wage in dollars per week, 
+* education and experience - measured in years
+* ethnicity is a factor with levels Caucasian ("cauc") and African-American ("afam"). 
+* smsa - indicating residence in a standard metropolitan statistical area (SMSA) 
+* region - the region within the United States of America, and
+* parttime - whether the individual works part-time.
+```
+Note that the CPS does not provide actual work experience. It is therefore customary to compute experience as ***age - education - 6***; this may be considered potential experience. This quantity may become negative.
+
+The model of interest is
+
+***log(wage) = $\beta$~1~  + $\beta$~2~ experience + $\beta$~3~ experience2 +$\beta$~4~ education +$\beta$~5~ ethnicity +$\varepsilon$ ***
+
+This is a semilogarithmic model, which can be fitted in R using
+
+
+```{r}
+cps_lm <- lm(log(wage) ~ experience + I(experience^2) +education + ethnicity, data = CPS1988)
+summary(cps_lm)
+```
+
+The summary reveals that all coefficients have the expected sign, and the corresponding variables are highly significant (not surprising in a sample as large as the present
+one). Specifically, according to this specification, the return on education is
+8.57% per year.
+
+To illustrate the general procedure for model comparisons, we explicitly fit the model without ethnicity and then compare both models using anova()
+
+```{r}
+cps_noeth <- lm(log(wage) ~ experience + I(experience^2) + education, data = CPS1988)
+anova(cps_noeth, cps_lm)
+```
+

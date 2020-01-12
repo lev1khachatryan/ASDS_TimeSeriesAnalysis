@@ -1,0 +1,288 @@
+---
+title: "Quiz"
+author: "Levon Khachatryan"
+date: '2018 11 16'
+output: html_document
+---
+```{r setup, include=FALSE}
+chooseCRANmirror(graphics=FALSE, ind=1)
+knitr::opts_chunk$set(echo = TRUE)
+```
+First of all we should install and import the appropriate libraries with these commands:
+```{r}
+if (!require(wooldridge)) { install.packages("wooldridge"); library(wooldridge) }
+attach(wage2)
+```
+The type of above mentioned dataset is
+```{r}
+class(wage2)
+```
+## 1 
+Estimate the simple regression model:
+$\log(wage) = \beta_{0} + \beta_{1}educ + \upsilon$ <br /><br /><br /><br />
+```{r}
+y <- lwage
+x <- educ
+xbar <- mean(x)
+ybar <- mean(y)
+model1 <- lm(y ~ x)
+model_summary <- summary(model1)
+model_summary
+```
+<br /><br />
+Let's plot the line of linear regression and scatter plot
+```{r qplot, fig.width=8,fig.height=5, message=FALSE, }
+par(mfrow=c(1,1))
+plot(y ~ x , data = wage2, col='blue', pch=20, cex=2, main="Relationship between log(salary) and years of CEO tenure",
+	xlab="education", ylab="log(wage)")
+abline(model1)
+```
+```{r ,echo=FALSE}
+```
+<br />
+<br />
+Based on this regression calculate (x=educ, y=log(wage))
+<br />
+<br />
+$\beta_{1} = \frac{\sum_{i=1}^{n}(x_{i}-\overline{x})(y_{i}-\overline{y})}{\sum_{i=1}^{n}(x_{i}-\overline{x})^2}$
+<br />
+<br />
+and show that it consistent with results of lm function in R.
+```{r}
+b1.hat <- (sum((x - xbar)*(y - ybar)))/sum((x - xbar)^2)
+b1.hat
+```
+Or as we know this is the same as
+```{r}
+b1.hat_1 <- cov(x , y) / var(x)
+b1.hat_1
+```
+Lets check if our value is consisten with lm value
+```{r}
+model_summary$coefficients
+if ( all.equal(model_summary$coefficients[2,1], b1.hat) == TRUE){
+  print("It is consistent with results of lm function ")
+} else {
+  print("It is not consistent with result of lm function ")
+}
+```
+<br />
+<br />
+*all.equal(x, y) is a utility to compare R objects x and y testing ‘near equality’*
+<br />
+<br />
+```{r ,echo=FALSE}
+```
+## 2
+<br />
+Based on this regression calculate standard error of slope (x=educ, y=log(wage))<br /><br />
+$SE(\beta_{1})=s \sqrt{\frac{n}{(n\sum_{}^{} (x^2)- (\sum_{}^{} x)^2)}}$
+<br />
+<br />
+Where
+<br />
+<br />
+$s^{2}=\frac{\sum_{i=1}^{n} (y_{i}-\hat{y}_{i})^2}{n-2}$
+<br />
+<br />
+and show that it consistent with results of lm function in R.
+<br /><br />
+```{r}
+b0.hat <- ybar - b1.hat * xbar
+n <- length(y)
+yfit <- b0.hat + b1.hat * x
+e <- y - yfit
+sig.hat <- sqrt(sum(e^2)/(n-2))
+
+SE_b1 <- sig.hat*( sqrt( n / (n*sum(x^2) - sum(x)^2 )))
+SE_b1
+```
+and about consistency 
+```{r}
+if ( all.equal(model_summary$coefficients[2,2], SE_b1) == TRUE){
+  print("It is consistent with results of lm function ")
+} else {
+  print("It is not consistent with result of lm function ")
+}
+```
+<br />
+```{r echo=FALSE}
+```
+## 3
+Based on this regression calculate standard R square (x=ceoten, y=log(salary))
+<br />
+<br />
+$R^2= \frac{explained variability}{total variability}=\frac{SS_{tot}-SS_{res}}{SS_{tot}}$
+<br />
+<br />
+$SS_{tot}$  - is the sum of squared deviations of each y value from the mean of y
+<br />
+$SS_{res}$ – is the sum of squared residuals of regression
+<br />
+<br />
+and show that it consistent with results of lm function in R
+<br />
+<br />
+Remember that
+<br />
+<br />
+$SS_{tot}=\sum_{i=1}^{n}(y_{i}-\overline{y})^2$
+<br />
+<br />
+$SS_{res}=\sum_{i=1}^{n}(y_{i}-\hat{y})^2$
+```{r}
+SST <- sum((y-ybar)^2)
+SSR <- sum((y-yfit)^2)
+R_squared <- (SST-SSR)/SST
+```
+And finally I am showing that this result is consistent with result of lm function
+```{r}
+if ( all.equal(model_summary$r.squared, R_squared) == TRUE){
+  print("It is consistent with results of lm function ")
+} else {
+  print("It is not consistent with result of lm function ")
+}
+```
+<br />
+```{r echo=FALSE}
+```
+## 4
+Estimate the model in which log(wage) is dependent variable and all others variables in data set are independent. Add the variables exper^ 2 and tenure^2 to the equation as independent variables. Compute stepwise regression (“backward”) and report the results in the usual form. Comment on the five most important regression results:
+<br />
+<br />
+There are many functions and R packages for computing stepwise regression. These include: stepAIC() [MASS package], which choose the best model by AIC. It has an option named direction, which can take the following values: i) "both" (for stepwise regression, both forward and backward selection); "backward" (for backward selection) and "forward" (for forward selection). It return the best final model.
+<br />
+<br />
+But first of all we should replace nullable values
+<br /><br />
+```{r}
+library(DMwR)
+if( anyNA(wage2)) {
+  
+  wage2 <- knnImputation(wage2)  # missing value treatment
+  
+}
+```
+<br />
+<br />
+Now as our dataset has not nullable values , we can work with model
+<br />
+<br />
+```{r}
+if (!require(MASS)) { install.packages("MASS"); library(MASS) }
+library(MASS)
+# Fit the full model 
+full.model <- lm( y~., data = wage2)
+added.model <- update(full.model, formula = . ~ . + I(exper^2) + I(tenure^2) - wage)
+summary(added.model)
+# Stepwise regression model
+step.model <- stepAIC(added.model, direction = "backward", trace=FALSE)
+summary(step.model)
+AIC(added.model)
+AIC(step.model)
+```
+<br />
+<br />
+AIC=2k-2Ln(L)
+BIC=ln(n)k-2ln(L)
+
+the train() function [caret package] provides an easy workflow to perform stepwise selections using the leaps and the MASS packages. It has an option named method, which can take the following values:
+
+"leapBackward", to fit linear regression with backward selection
+"leapForward", to fit linear regression with forward selection
+"leapSeq", to fit linear regression with stepwise selection .
+You also need to specify the tuning parameter nvmax, which corresponds to the maximum number of predictors to be incorporated in the model.
+
+For example, you can vary nvmax from 1 to 5. In this case, the function starts by searching different best models of different size, up to the best 5-variables model. That is, it searches the best 1-variable model, the best 2-variables model, ., the best 5-variables models.
+
+The following example performs backward selection (method = "leapBackward"), using the swiss data set, to identify the best model for predicting Fertility on the basis of socio-economic indicators.
+
+
+ 
+As the data set contains only 5 predictors, we'll vary nvmax from 1 to 5 resulting to the identification of the 5 best models with different sizes: the best 1-variable model, the best 2-variables model, ., the best 5-variables model.
+
+We'll use 10-fold cross-validation to estimate the average prediction error (RMSE) of each of the 5 models (see Chapter @ref(cross-validation)). The RMSE statistical metric is used to compare the 5 models and to automatically choose the best one, where best is defined as the model that minimize the RMSE.
+
+<br />
+<br />
+
+```{r}
+if (!require(caret)) { install.packages("caret"); library(caret) }
+# install.packages("caret")
+# library(caret)
+
+set.seed(123)
+# Set up repeated k-fold cross-validation
+train.control <- trainControl(method = "cv", number = 10)
+# Train the model
+step.model <- train(lwage ~ . + I(exper^2) + I(tenure^2) - wage, data = wage2,
+                    method = "leapBackward",
+                    tuneGrid = data.frame(nvmax = 1:5),
+                    trControl = train.control)
+# summary(step.model)
+step.model$results
+```
+<br />
+<br />
+The output above shows different metrics and their standard deviation for comparing the accuracy of the 5 best models. Columns are:
+
+
+nvmax: the number of variable in the model. For example nvmax = 2, specify the best 2-variables model
+RMSE and MAE are two different metrics measuring the prediction error of each model. The lower the RMSE and MAE, the better the model.
+Rsquared indicates the correlation between the observed outcome values and the values predicted by the model. The higher the R squared, the better the model.
+In our example, it can be seen that the model with 4 variables (nvmax = 4) is the one that has the lowest RMSE. You can display the best tuning values (nvmax), automatically selected by the train() function, as follow:
+
+```{r}
+step.model$bestTune
+```
+
+This indicates that the best model is the one with nvmax = 5 variables. The function summary() reports the best set of variables for each model size, up to the best 5-variables model.
+
+```{r}
+summary(step.model$finalModel)
+```
+
+An asterisk specifies that a given variable is included in the corresponding model. For example, it can be seen that the best 5-variables model contains **educ tenure married black urban**
+
+The regression coefficients of the final model (id = 1) can be accessed as follow:
+
+```{r}
+coef(step.model$finalModel, id = 5)
+```
+<br />
+<br />
+Therefore our best model will be following:
+<br />
+<br />
+```{r}
+best.model <- lm(lwage ~ educ + tenure + married + black + urban, data=wage2)
+summary(best.model)
+```
+<br />
+<br />
+Let's pay attention to the **$R^{2}$** , **t-statistics**, **F- statistics**
+<br />
+<br />
+The $R^{2}$ statistic provides a measure of how well the model is fitting the actual data.<br />
+$R^{2}$ is a measure of the linear relationship between our predictor variable (**lwage**) and our response / target variable (**educ tenure married black urban**)
+<br />
+It always lies between 0 and 1 (i.e.: a number near 0 represents a regression that does not explain the variance in the response variable well and a number close to 1 does explain the observed variance in the response variable). In our example, the R2 we get is 0.2269 Or roughly 22% of the variance found in the response variable (**educ tenure married black urban**) can be explained by the predictor variable (**lwage**). Therefore there is strong relationship between **lwage** and **educ tenure married black urban**.
+<br />
+<br />
+The coefficient **t-value** is a measure of how many standard deviations our coefficient estimate is far away from 0. We want it to be far away from zero as this would indicate we could reject the null hypothesis - that is, we could declare a relationship between **lwage** and **educ tenure married black urban** exist. In our example, a relationship exists.
+<br />
+<br />
+**F-statistic** is a good indicator of whether there is a relationship between our predictor and the response variables. The further the F-statistic is from 1 the better it is. However, how much larger the F-statistic needs to be depends on both the number of data points and the number of predictors. Generally, when the number of data points is large, an F-statistic that is only a little bit larger than 1 is already sufficient to reject the null hypothesis (**H0 : There is no relationship between lwage  and educ tenure married black urban**). The reverse is true as if the number of data points is small, a large F-statistic is required to be able to ascertain that there may be a relationship between predictor and response variables. In our example the F-statistic is 54.54 , corresponding p-value is lesser than 0.05 so it's also reinforce the fact , that there is strong relationship between regressors and regression.
+<br />
+<br />
+<br />
+<br />
+**THANK YOU**
+
+
+
+
+
+
+
+

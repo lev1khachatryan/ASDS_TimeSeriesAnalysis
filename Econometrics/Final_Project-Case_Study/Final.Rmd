@@ -1,0 +1,202 @@
+---
+title: "Final Project"
+author: "Levon Khachatryan"
+date: "January 02, 2019"
+output: html_document
+header-includes:
+  - \usepackage{color}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+In order to avoid any cofusions, i would like to suggest you upgrade **R** version to current available version:<br />
+```{r}
+# if (!require(installr)) { install.packages("installr"); library(installr) }
+# updateR()
+```
+Now we can import our data set and start working with it.
+```{r}
+rm(list = ls())
+dat = read.csv("D:/MyProjects/Econometrics_Homeworks/Final_Project-Case_Study/sources/bankloan_cs_noweights.csv", header = TRUE)
+head(dat)
+```
+Let's convert the blanks (if exists) to "NA
+```{r}
+dat[dat==""]  <- NA 
+```
+Checking and vizualization for missing values using missmap
+```{r}
+library(Amelia)
+missmap(dat, main = "Missing values vs observed")
+
+```
+<br />
+Another way to checking for missing values using the sapply() function
+```{r}
+sapply(dat, function(x) sum(is.na(x)))
+```
+Insofar as we want to see how may unique values there are for each column, we can do the following:
+```{r}
+sapply(dat, function(x) length(unique(x)))
+```
+<!-- A few basic ratios from the data: -->
+<!-- ```{r} -->
+<!-- overall_survival_rate = sum(dat$Survived == 1)/length(dat$Survived) -->
+<!-- overall_survival_rate -->
+<!-- ``` -->
+So what we can say is that our data set has no nullable values and there are some variables (for example **ed** - education) that can be transformed to categorical. So let's transforme **ed** to categorical variable. We can do that by the following way:
+```{r}
+dat$ed<-as.factor(dat$ed)
+```
+After that we can see levels by follows
+```{r}
+levels(dat$ed)
+```
+And the contrasts will be :
+```{r}
+contrasts(dat$ed)
+```
+In order to see the distribution of education , we can play with table (frequency table):
+```{r}
+table(dat$ed)
+```
+Let's start the logistic regression part
+```{r echo=FALSE}
+```
+## Modeling
+```{r}
+dat.small <- dat[,c("age","ed","employ","address","income","debtinc","creddebt","othdebt", "default")]
+dat.small$income <- as.double(dat.small$income)
+model1 <- glm(default ~ . , family=binomial(link='logit'),data=dat.small)
+summary(model1)
+```
+<!-- Use the anova function to compare the addition of each variable: -->
+<!-- ```{r} -->
+<!-- anova(model1, test="Chisq") -->
+<!-- ``` -->
+Now, as we built our logistic model, let us explain, step by step, the result of **summary** and also explain all **logic behind the logistic regression models** as well.<br /><br />
+The first thing which i would like to pay attention is Logistic Regression itself.<br />
+So let us get to know the math behind it.<br /><br />
+It's an extension of linear regression where the dependent variable is categorical and not continuous. It predicts the probability of the outcome variable.<br /><br />
+**Logistic Response Function** is the following:<br /><br />
+$P(y=1)=\frac{1}{1+e^-{(\beta_{0}+\beta_{1}x_{1}+\beta_{2}x_{2}+...+\beta_{k}x_{k})}}$
+<br /><br />
+The coefficients, or **$\beta$** values, are selected to maximize the likelihood of predicting a high probability for observations actually belonging to class 1 and predicting a low probability for observations actually belonging to class 0. The output of this function is always between 0 and 1.<br /><br />
+Positive values are predictive of class 1 <br /><br />
+Negative values are predictive of class 0 <br /><br />
+About **Odds Ratio** what can i say is that the odds ratio for a variable in logistic regression represents how the odds change with a 1 unit increase in that variable holding all other variables constant.<br /><br />
+Odds : P(y=1)/P(y=o)<br /><br />
+Odds > 1 if y = 1 is more likely<br /><br />
+Odds < 1 if y = 0 is more likely<br /><br />
+The Logit : <br /><br />
+$Odds=e^{\beta_{0} +\beta_{1}x_{1}+...+\beta_{k}x_{k}}$<br /><br />
+$log(Odds)=\beta_{0}+\beta_{1}x_{1}+...+\beta_{k}x_{k}$<br /><br />
+This is called the **“Logit”** and looks like linear regression.<br /><br />
+But if we are talking about logistic regression, we can not escape the following form of logistic regression :<br /><br />
+$y = ln(\frac{P}{1-P}) = \alpha + \beta_{1}x_{1}+ \beta_{2}x_{2}+...+\beta_{k}x_{k}$
+<br /><br /><br />
+Now let us go back to the our logistic model . We can analyze the fitting and interpret what the model is telling us.<br />Recall that the summary of our model is follows:
+```{r}
+summary(model1)
+```
+In the output above, the first thing we see is the call, this is R reminding us what the model we ran was, what options we specified, etc.
+Next we see the deviance residuals, which are a measure of model fit. This part of output shows the distribution of the deviance residuals for individual cases used in the model. Below we discuss how to use summaries of the deviance statistic to assess model fit.
+The next part of the output shows the coefficients, their standard errors, the z-statistic (sometimes called a Wald z-statistic), and the associated p-values. The logistic regression coefficients give the change in the log odds of the outcome for a one unit increase in the predictor variable.<br /><br />
+For instance , for every one unit change in **debtinc**, the log odds of admission (versus non-admission) increases by 0.1 <br /><br />
+The indicator variables for **ed** have a slightly different interpretation. For example, having attended an rank of 2, versus an rank of 1, changes the log odds of admission by -0.022065 <br /><br />
+
+We can use the confint function to obtain confidence intervals for the coefficient estimates. Note that for logistic models, confidence intervals are based on the profiled log-likelihood function. We can also get CIs based on just the standard errors by using the default method
+```{r}
+confint(model1)
+```
+<br /><br />
+From summary, we can see also that age, ed,address, income(whis is the interesting case) and othdebt are not statistically significant. As for the statistically significant variables, employ, debtinc and creddebt has the low p-value suggesting a strong association of that variables of the person with the probability of having default. The negative coefficient for employ predictor suggests that all other variables being equal.<br /><br />
+Now we can run the anova() function on the model to analyze the table of deviance.
+```{r}
+anova(model1, test="Chisq")
+```
+The difference between the null deviance and the residual deviance shows how our model is doing against the null model (a model with only the intercept). The wider this gap, the better. Analyzing the table we can see the drop in deviance when adding each variable one at a time. So adding the age, ed, employ income, debtinc, creddebt significantly reduces the residual deviance. The other variables seem to improve the model less even though address has a low p-value. A large p-value here indicates that the model without the variable explains more or less the same amount of variation. Ultimately what you would like to see is a significant drop in deviance and the AIC.<br /><br />
+While no exact equivalent to the R2 of linear regression exists, the McFadden R2 index can be used to assess the model fit.
+```{r}
+# install.packages("pscl")
+library(pscl)
+pR2(model1)
+```
+In the steps above, we briefly evaluated the fitting of the model.<br /><br /><br />
+We can use stepwise model for finding best estimator for specific problem as follows:
+```{r}
+library(MASS)
+step <- (stepAIC(model1, direction="backward"))
+```
+As the best estimator we can take the following model (final model)
+```{r}
+step$anova
+```
+
+```{r}
+final_model <-glm(dat.small$default ~ age + employ + income + debtinc + creddebt, data = dat.small )
+summary(final_model)
+```
+We see the word **Deviance** twice over in the model output. Deviance is a measure of goodness of fit of a generalized linear model. Or rather, it’s a measure of badness of fit–higher numbers indicate worse fit.<br />
+R reports two forms of deviance – the null deviance and the residual deviance. The null deviance shows how well the response variable is predicted by a model that includes only the intercept (grand mean)<br />
+For our example, we have a value of 347.8 on 1499 degrees of freedom. Including the independent variables decreased the deviance to 248.73 points on 1494 degrees of freedom, a significant reduction in deviance.<br /><br />
+What about the **Fisher scoring** algorithm? Fisher’s scoring algorithm is a derivative of Newton’s method for solving maximum likelihood problems numerically.<br />
+For final_model we see that Fisher’s Scoring Algorithm needed two iterations to perform the fit.<br />
+This doesn’t really tell you a lot that you need to know, other than the fact that the model did indeed converge, and had no trouble doing it.
+```{r echo=FALSE}
+```
+And also I have written function which can do prediction by arguments:
+```{r}
+myFunc <- function(age , employ , income , debtinc , creddebt, cat = 0.5){
+  a <- c(1, age , employ , income , debtinc , creddebt)
+  ez <- exp(-sum(final_model$coefficients * a ))
+  prob <- 1/(1+ez)
+  if (prob > cat){
+    print("default")
+  } else{
+    print("Non default")
+  }
+  # return(prob)
+}
+```
+For example for following arguments my model will make the following decision:
+```{r}
+myFunc( 45 , 1 , 2520000 , 122 , 12)
+```
+And for another arguments , my model will make another decision
+```{r}
+myFunc( 50 , 1 , 252 , 100 , 12)
+```
+```{r echo=FALSE}
+```
+And finally some additional information of my model:
+```{r}
+attach(dat)
+LogL1<-logLik(final_model)
+
+logitmodel2 <- glm(default ~  1, family=binomial(link="logit"), data=dat)
+# summary(logitmodel2)
+LogL2<-logLik(logitmodel2)
+log(mean(default)) - log(1 - mean(default))
+
+#logistic.model.list <- list(null = logitmodel2, lwt = logitmodel1, full = logitmodel)
+#lapply(logistic.model.list, summary)
+
+McF<-1-LogL1/LogL2
+McF
+
+library(rcompanion)
+# nagelkerke(final_model)
+
+default.prob = predict(final_model, type="response")
+default.pred = rep(0, nrow(dat))
+default.pred[default.prob > .5] = 1
+table(default.pred, final_model$data$default)
+
+
+library(pROC)
+roc(final_model$data$default,default.pred)
+plot.roc(final_model$data$default,default.pred)
+```
+

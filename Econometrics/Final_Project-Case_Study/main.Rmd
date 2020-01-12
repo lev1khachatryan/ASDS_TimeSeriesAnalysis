@@ -1,0 +1,23 @@
+---
+title: "Final Project"
+author: "Levon Khachatryan"
+date: "January 02, 2019"
+output: html_document
+header-includes:
+  - \usepackage{color}
+---
+<br />
+<br />
+**Recall the task**
+<br />
+<br />
+We need to construct 2 models for prediction number of departed (which is a A25 column of our data set).<br />
+One of them should be **logit model** and the other one **tobit model**
+<br />
+<br />
+So let's start with importing necessary data.
+```{r}
+library(haven)
+df <- read_sav("D:/MyProjects/Econometrics_Homeworks/Final_Project-Case_Study/DI2007_Regional_Database.sav")
+```
+

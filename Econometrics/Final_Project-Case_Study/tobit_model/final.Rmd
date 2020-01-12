@@ -1,0 +1,58 @@
+---
+title: "Final Project"
+author: "Levon Khachatryan"
+date: "January 02, 2019"
+output: html_document
+header-includes:
+  - \usepackage{color}
+---
+We illustrate the mechanics using a famous or perhaps infamous data set taken from Fair (1978). It is available as Affairs in AER and provides the results of a survey on extramarital affairs conducted by the US magazine Psychology Today in 1969. The dependent variable is affairs, the number of extramarital affairs during the past year, and the available regressors include age, yearsmarried, children (a factor indicating the presence of children), occupation (a numeric score coding occupation), and rating (a numeric variable coding the self-rating of the marriage; the scale is 1 through 5, with 5 indicating "very happy").
+```{r}
+library(AER)
+data( "Affairs", package = "AER" )     
+aff_tob <- tobit(affairs ~ age + yearsmarried + religiousness + occupation + rating, data = Affairs)
+summary(aff_tob)
+```
+The output comprises the usual regression output along with the value of the log-likelihood and a Wald statistic paralleling the familiar regression F statistic. For convenience, a tabulation of censored and uncensored observations is also included. The results indicate that yearsmarried and rating are the main "risk factors".
+<br />
+<br />
+To further illustrate the arguments to tobit(), we refit the model by introducing additional censoring from the right:
+```{r}
+aff_tob2 <- update(aff_tob, right = 4)
+summary(aff_tob2)
+```
+The standard errors are now somewhat larger, reflecting the fact that heavier censoring leads to a loss of information.
+<br />
+Description of tobit model is the following:
+<br />
+<br />
+**tobit(formula, left = 0, right = Inf, dist = "gaussian",subset = NULL, data = list(), ...)**
+<br />
+<br />
+**Arguments**<br /><br />
+formula<br />
+a symbolic description of a regression model of type y ~ x1 + x2 + ....
+<br /><br />
+left<br />
+left limit for the censored dependent variable y. If set to -Inf, y is assumed not to be left-censored.
+<br /><br />
+right<br />
+right limit for the censored dependent variable y. If set to Inf, the default, y is assumed not to be right-censored.
+<br /><br />
+dist<br />
+assumed distribution for the dependent variable y. This is passed to survreg, see the respective man page for more details.
+<br /><br />
+subset<br />
+a specification of the rows to be used.
+<br /><br />
+data<br />
+a data frame containing the variables in the model.
+<br /><br />
+**Details**<br /><br />
+The function tobit is a convenience interface to survreg (for survival regression, including censored regression) setting different defaults and providing a more convenient interface for specification of the censoring information.
+<br />
+The default is the classical tobit model (Tobin 1958, Greene 2003) assuming a normal distribution for the dependent variable with left-censoring at 0.
+<br />
+Technically, the formula of type y ~ x1 + x2 + ... passed to tobit is simply transformed into a formula suitable for survreg: This means the dependent variable is first censored and then wrapped into a Surv object containing the censoring information which is subsequently passed to survreg, e.g., Surv(ifelse(y <= 0, 0, y), y > 0, type = "left") ~ x1 + x2 + ... for the default settings.
+<br /><br />
+An object of class "tobit" inheriting from class "survreg".

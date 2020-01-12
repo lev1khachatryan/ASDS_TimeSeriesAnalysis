@@ -1,0 +1,123 @@
+LOGISTIC REGRESSION VARIABLES default,,,,,,,
+  /METHOD=ENTER age ed employ address income debtinc creddebt othdebt,,,,,,,
+  /CONTRAST (ed)=Indicator,,,,,,,
+  /CRITERIA=PIN(.05) POUT(.10) ITERATE(20) CUT(.5).,,,,,,,
+
+,,,,,,,,
+Logistic Regression,,,,,,,
+
+Notes,,,,,,,
+Output Created,,26-NOV-2018 10:00:09,,,,,
+Comments,,,,,,,
+Input,Data,C:\Program Files\IBM\SPSS\Statistics\20\Samples\English\bankloan_cs_noweights.sav,,,,,
+,Active Dataset,DataSet3,,,,,
+,Filter,<none>,,,,,
+,Weight,<none>,,,,,
+,Split File,<none>,,,,,
+,N of Rows in Working Data File,1500,,,,,
+Missing Value Handling,Definition of Missing,User-defined missing values are treated as missing,,,,,
+Syntax,,"LOGISTIC REGRESSION VARIABLES default
+  /METHOD=ENTER age ed employ address income debtinc creddebt othdebt
+  /CONTRAST (ed)=Indicator
+  /CRITERIA=PIN(.05) POUT(.10) ITERATE(20) CUT(.5).",,,,,
+Resources,Processor Time,00:00:00.06,,,,,
+,Elapsed Time,00:00:00.25,,,,,
+
+,,,,,,,,
+[DataSet3] C:\Program Files\IBM\SPSS\Statistics\20\Samples\English\bankloan_cs_noweights.sav,,,,,,,
+
+Case Processing Summary,,,,,,,
+Unweighted Casesa,,N,Percent,,,,
+Selected Cases,Included in Analysis,1500,100.0,,,,
+,Missing Cases,0,0.0,,,,
+,Total,1500,100.0,,,,
+Unselected Cases,,0,0.0,,,,
+Total,,1500,100.0,,,,
+"a. If weight is in effect, see classification table for the total number of cases.",,,,,,,
+
+Dependent Variable Encoding,,,,,,,
+Original Value,Internal Value,,,,,,
+No,0,,,,,,
+Yes,1,,,,,,
+
+Categorical Variables Codings,,,,,,,
+,,Frequency,Parameter coding,,,,
+,,,(1),(2),(3),(4),
+Level of education,Did not complete high school,246,1.000,0.000,0.000,0.000,
+,High school degree,527,0.000,1.000,0.000,0.000,
+,Some college,333,0.000,0.000,1.000,0.000,
+,College degree,310,0.000,0.000,0.000,1.000,
+,Post-undergraduate degree,84,0.000,0.000,0.000,0.000,
+
+,,,,,,,,
+Block 0: Beginning Block,,,,,,,
+
+"Classification Tablea,b",,,,,,,
+Observed,,,Predicted,,,,
+,,,Previously defaulted,,Percentage Correct,,
+,,,No,Yes,,,
+Step 0,Previously defaulted,No,952,0,100.0,,
+,,Yes,548,0,0.0,,
+,Overall Percentage,,,,63.5,,
+a. Constant is included in the model.,,,,,,,
+b. The cut value is .500,,,,,,,
+
+Variables in the Equation,,,,,,,
+,,B,S.E.,Wald,df,Sig.,Exp(B)
+Step 0,Constant,-.552,.054,106.087,1,.000,.576
+
+Variables not in the Equation,,,,,,,
+,,,Score,df,Sig.,,
+Step 0,Variables,age,124.273,1,.000,,
+,,ed,22.585,4,.000,,
+,,ed(1),14.037,1,.000,,
+,,ed(2),.252,1,.616,,
+,,ed(3),.046,1,.831,,
+,,ed(4),12.545,1,.000,,
+,,employ,129.234,1,.000,,
+,,address,109.221,1,.000,,
+,,income,12.938,1,.000,,
+,,debtinc,201.016,1,.000,,
+,,creddebt,52.590,1,.000,,
+,,othdebt,12.190,1,.000,,
+,Overall Statistics,,433.933,11,.000,,
+
+,,,,,,,,
+Block 1: Method = Enter,,,,,,,
+
+Omnibus Tests of Model Coefficients,,,,,,,
+,,Chi-square,df,Sig.,,,
+Step 1,Step,599.615,11,.000,,,
+,Block,599.615,11,.000,,,
+,Model,599.615,11,.000,,,
+
+Model Summary,,,,,,,
+Step,-2 Log likelihood,Cox & Snell R Square,Nagelkerke R Square,,,,
+1,1369.661a,.330,.451,,,,
+a. Estimation terminated at iteration number 6 because parameter estimates changed by less than .001.,,,,,,,
+
+Classification Tablea,,,,,,,
+Observed,,,Predicted,,,,
+,,,Previously defaulted,,Percentage Correct,,
+,,,No,Yes,,,
+Step 1,Previously defaulted,No,816,136,85.7,,
+,,Yes,218,330,60.2,,
+,Overall Percentage,,,,76.4,,
+a. The cut value is .500,,,,,,,
+
+Variables in the Equation,,,,,,,
+,,B,S.E.,Wald,df,Sig.,Exp(B)
+Step 1a,age,-.021,.016,1.719,1,.190,.979
+,ed,,,5.361,4,.252,
+,ed(1),.621,.367,2.863,1,.091,1.860
+,ed(2),.579,.333,3.034,1,.082,1.785
+,ed(3),.396,.339,1.368,1,.242,1.486
+,ed(4),.670,.333,4.041,1,.044,1.954
+,employ,-.226,.023,97.204,1,.000,.797
+,address,-.031,.036,.744,1,.389,.969
+,income,.000,.003,.005,1,.946,1.000
+,debtinc,.101,.016,37.912,1,.000,1.106
+,creddebt,.477,.060,62.991,1,.000,1.611
+,othdebt,.022,.031,.500,1,.479,1.022
+,Constant,-1.095,.502,4.757,1,.029,.335
+"a. Variable(s) entered on step 1: age, ed, employ, address, income, debtinc, creddebt, othdebt.",,,,,,,

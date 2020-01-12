@@ -1,0 +1,91 @@
+---
+title: "Homework 4"
+author: "Levon Khachatryan"
+date: "December 18, 2018"
+output: html_document
+header-includes:
+  - \usepackage{color}
+---
+<br />
+<br />
+**Recall the Homework**
+<br />
+<br />
+we should split the data ( bankloan ) into train and test , do all the works with the train dataset and check the results in the test data set.
+<br />
+<br />
+So let's start with importing necessary data.
+```{r}
+rm(list = ls())
+logitdata = read.csv("D:/MyProjects/Econometrics_Homeworks/Homework_4/sources/bankloan_cs_noweights.csv", header = TRUE)
+head(logitdata)
+```
+Now let's split the dataset into train and test.
+```{r}
+smp_size <- floor(0.75 * nrow(logitdata))
+
+## set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(logitdata)), size = smp_size)
+
+train <- logitdata[train_ind, ]
+test <- logitdata[-train_ind, ]
+```
+Dimension of train and test datasets are following.
+```{r}
+dim(train)
+dim(test)
+```
+I am attaching a data set to cover future misunderstandings.
+```{r}
+# attach(logitdata)
+attach(train)
+attach(test)
+```
+Constructing model.
+```{r}
+logitmodel <- glm(default ~  ., family=binomial(link="logit"), data=train)
+LogL<-logLik(logitmodel)
+```
+If we will do summary(logitmodel) , we will obtain the following.<br /><br />
+Null deviance: 1.4876e+03  on 1124  degrees of freedom<br />
+Residual deviance: 6.5268e-09  on    0  degrees of freedom<br />
+AIC: 2250<br />
+<br />
+Number of Fisher Scoring iterations: 25<br />
+```{r}
+logitmodel1 <- glm(default ~  ed, family=binomial(link="logit"), data=train)
+LogL1<-logLik(logitmodel1)
+
+logitmodel2 <- glm(default ~  1, family=binomial(link="logit"), data=train)
+LogL2<-logLik(logitmodel2)
+log(mean(default)) - log(1 - mean(train$default))
+
+McF<-1-LogL/LogL2
+McF
+
+McF1<-1-LogL1/LogL2
+McF1
+# install.packages("rcompanion")
+library(rcompanion)
+nagelkerke(logitmodel)
+
+default.prob = predict(logitmodel, type="response")
+default.pred = rep(0, nrow(train))
+default.pred[default.prob > .5] = 1
+table(default.pred, logitmodel$data$default)
+
+# install.packages("pROC")
+library(pROC)
+roc(logitmodel$data$default,default.pred)
+plot.roc(logitmodel$data$default,default.pred)
+```
+```{r echo=FALSE}
+```
+## Making prediction for test dataset.
+```{r}
+default.prob = predict(logitmodel, type="response")
+default.pred = rep(0, nrow(test))
+default.pred[default.prob > .5] = 1
+table(default.pred, logitmodel$data$default)
+```

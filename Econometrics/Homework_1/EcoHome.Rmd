@@ -1,0 +1,217 @@
+---
+title: 'Econometrics : Homework 1'
+author: "Levon Khachatryan"
+output: html_document
+---
+```{r setup, include=FALSE}
+chooseCRANmirror(graphics=FALSE, ind=1)
+knitr::opts_chunk$set(echo = TRUE)
+```
+First of all we should install and import the appropriate library with these commands:
+```{r}
+if (!require(wooldridge)) { install.packages("wooldridge"); library(wooldridge) }
+attach(ceosal2)
+```
+## 1
+Find the average salary and the average tenure in the sample.
+```{r}
+y <- log(salary)
+x <- ceoten
+xbar <- mean(x)
+ybar <- mean(y)
+xbar
+ybar
+```
+##2
+How many CEOs are in their first year as CEO (that is, ceoten = 0)?
+```{r}
+sum(x == 0)
+```
+What is the longest tenure as a CEO?
+```{r}
+ceosal2[x == max(x),]
+```
+##3
+Estimate the simple regression model:<br /><br />
+$\log(salary) = \beta_{0} + \beta_{1}ceoten + \upsilon$ <br /><br />
+and report your results in the usual form (comments on **$R^{2}$** , **t-statistics**, **F-statistics**).<br />
+```{r}
+model1 <- lm(y ~ x)
+model_summary <- summary(model1)
+model_summary
+```
+Let's pay attention to the **$R^{2}$** , **t-statistics**, **F- statistics**
+<br />
+<br />
+The $R^{2}$ statistic provides a measure of how well the model is fitting the actual data.<br />
+$R^{2}$ is a measure of the linear relationship between our predictor variable (**ceoten**) and our response / target variable (**log(salary)**)
+<br />
+It always lies between 0 and 1 (i.e.: a number near 0 represents a regression that does not explain the variance in the response variable well and a number close to 1 does explain the observed variance in the response variable). In our example, the R2 we get is 0.01316 Or roughly 1% of the variance found in the response variable (**log(salary)**) can be explained by the predictor variable (**ceoten**). Therefore there is low relationship between **log(salary)** and **ceoten**.
+<br />
+<br />
+The coefficient **t-value** is a measure of how many standard deviations our coefficient estimate is far away from 0. We want it to be far away from zero as this would indicate we could reject the null hypothesis - that is, we could declare a relationship between **ceoten** and **log(salary)** exist. In our example, a relationship does not exists.
+<br />
+<br />
+**F-statistic** is a good indicator of whether there is a relationship between our predictor and the response variables. The further the F-statistic is from 1 the better it is. However, how much larger the F-statistic needs to be depends on both the number of data points and the number of predictors. Generally, when the number of data points is large, an F-statistic that is only a little bit larger than 1 is already sufficient to reject the null hypothesis (*H0 : There is no relationship between ceoten and log(salary)*). The reverse is true as if the number of data points is small, a large F-statistic is required to be able to ascertain that there may be a relationship between predictor and response variables. In our example the F-statistic is 2.334164 which is relatively close to 1 given the size of our data
+<br />
+<br />
+And last question is : What is the (approximate) predicted percentage increase in salary given one more year as a CEO?
+<br />
+<br />
+The predicted percentage increase in salary given one more year as a CEO is   **`r ceiling(100 * model_summary$coefficients[2,1])`** percent (The real value without percentage is `r model_summary$coefficients[2,1]` which is the b1.hat - predicted value of argument x )
+```{r ,echo=FALSE}
+```
+##4
+Plot the line of linear regression and scatter plot
+```{r qplot, fig.width=8,fig.height=5, message=FALSE, }
+par(mfrow=c(1,1))
+plot(y ~ x , data = ceosal2, col='blue', pch=20, cex=2, main="Relationship between log(salary) and years of CEO tenure",
+	xlab="Years as CEO", ylab="log(salary)")
+abline(model1)
+```
+```{r ,echo=FALSE}
+```
+##5
+Based on this regression calculate (x=ceoten, y=log(salary))
+<br />
+<br />
+$\beta_{1} = \frac{\sum_{i=1}^{n}(x_{i}-\overline{x})(y_{i}-\overline{y})}{\sum_{i=1}^{n}(x_{i}-\overline{x})^2}$
+<br />
+<br />
+and show that it consistent with results of lm function in R.
+```{r}
+b1.hat <- (sum((x - xbar)*(y - ybar)))/sum((x - xbar)^2)
+b1.hat
+```
+Or as we know this is the same as
+```{r}
+b1.hat_1 <- cov(x , y) / var(x)
+b1.hat_1
+```
+Lets check if our value is consisten with lm value
+```{r}
+model_summary$coefficients
+if ( all.equal(model_summary$coefficients[2,1], b1.hat) == TRUE){
+  print("It is consistent with results of lm function ")
+} else {
+  print("It is not consistent with result of lm function ")
+}
+```
+<br />
+<br />
+*all.equal(x, y) is a utility to compare R objects x and y testing ‘near equality’*
+<br />
+<br />
+```{r ,echo=FALSE}
+```
+##6
+Based on this regression calculate (x=ceoten, y=log(salary))
+<br />
+<br />
+$\beta_{0}=\overline{y}-\beta_{1}\overline{x}$
+<br />
+<br />
+and show that it consistent with results of lm function
+```{r}
+b0.hat <- ybar - b1.hat * xbar
+b0.hat
+```
+and consistency
+```{r}
+if ( all.equal(model_summary$coefficients[1,1], b0.hat) == TRUE){
+  print("It is consistent with results of lm function ")
+} else {
+  print("It is not consistent with result of lm function ")
+}
+```
+##7
+Based on this regression calculate standard error of intercept (x=ceoten, y=log(salary)) 
+<br />
+<br />
+$SE(\beta_{0})=s \sqrt{\frac{\sum_{}^{} x^2}{(n\sum_{}^{} (x^2)- (\sum_{}^{} x)^2)}}$
+<br />
+<br />
+Where
+<br />
+<br />
+$s^{2}=\frac{\sum_{i=1}^{n} (y_{i}-\hat{y}_{i})^2}{n-2}$
+<br />
+<br />
+and show that it consistent with results of lm function in R
+```{r}
+n <- length(y)
+yfit <- b0.hat + b1.hat * x
+e <- y - yfit
+sig.hat <- sqrt(sum(e^2)/(n-2))
+SE_bo <- sig.hat*( sqrt( sum(x^2) / (n*sum(x^2) - sum(x)^2 )))
+SE_bo
+```
+and about consistency 
+```{r}
+if ( all.equal(model_summary$coefficients[1,2], SE_bo) == TRUE){
+  print("It is consistent with results of lm function ")
+} else {
+  print("It is not consistent with result of lm function ")
+}
+```
+##8
+Based on this regression calculate standard error of slope (x=ceoten, y=log(salary)) 
+<br />
+<br />
+$SE(\beta_{0})=s \sqrt{\frac{n}{(n\sum_{}^{} (x^2)- (\sum_{}^{} x)^2)}}$
+<br />
+<br />
+Where
+<br />
+<br />
+$s^{2}=\frac{\sum_{i=1}^{n} (y_{i}-\hat{y}_{i})^2}{n-2}$
+<br />
+<br />
+and show that it consistent with results of lm function in R.
+```{r}
+SE_b1 <- sig.hat*( sqrt( n / (n*sum(x^2) - sum(x)^2 )))
+SE_b1
+```
+and about consistency 
+```{r}
+if ( all.equal(model_summary$coefficients[2,2], SE_b1) == TRUE){
+  print("It is consistent with results of lm function ")
+} else {
+  print("It is not consistent with result of lm function ")
+}
+```
+##9
+Based on this regression calculate standard R square (x=ceoten, y=log(salary))
+<br />
+<br />
+$R^2= \frac{explained variability}{total variability}=\frac{SS_{tot}-SS_{res}}{SS_{tot}}$
+<br />
+<br />
+$SS_{tot}$  - is the sum of squared deviations of each y value from the mean of y
+<br />
+$SS_{res}$ – is the sum of squared residuals of regression
+<br />
+<br />
+and show that it consistent with results of lm function in R
+<br />
+<br />
+Remember that
+<br />
+<br />
+$SS_{tot}=\sum_{i=1}^{n}(y_{i}-\overline{y})^2$
+<br />
+<br />
+$SS_{res}=\sum_{i=1}^{n}(y_{i}-\hat{y})^2$
+```{r}
+SST <- sum((y-ybar)^2)
+SSR <- sum((y-yfit)^2)
+R_squared <- (SST-SSR)/SST
+```
+And finally I am showing that this result is consistent with result of lm function
+```{r}
+if ( all.equal(model_summary$r.squared, R_squared) == TRUE){
+  print("It is consistent with results of lm function ")
+} else {
+  print("It is not consistent with result of lm function ")
+}
+```

@@ -1,0 +1,251 @@
+---
+title: "Model Selection"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+##Problem description
+
+The 'Ozone' data from mlbench package contains the Los Angeles ozone pollution data collected in 1976. It is available as a data frame with 366 rows and 13 variables, that may be helpful to explain the ozone reading in the region. It is now up to us to find out which of the available variables would suit best to predict the ozone reading with maximum accuracy. The objective of this analysis is to accurately predict the 'daily maximum one-hour average ozone reading', using linear regression models.
+We will ensure this by making a 80:20 split of the data as development and validation samples, and use only the 80% sample for building linear models(training).
+
+The models thus built will be used to predict the ozone reading on the 20% validation sample. With the actual ozone readings from 20% validation sample and model predictions thus computed, we will calculate the prediction accuracy and use it as one of the important parameters to decide the optimal model that suits this problem.
+
+##Prepare input data
+```{r}
+# if (!require(mlbench)) { install.packages("mlbench"); library(mlbench) }
+# #install.packages("mlbench")
+library(mlbench)
+data (Ozone, package="mlbench")  # initialize the data
+
+inputData <- Ozone  # data from mlbench
+
+# assign names
+
+names(inputData) <- c("Month", "Day_of_month", "Day_of_week", "ozone_reading", "pressure_height", "Wind_speed", "Humidity", "Temperature_Sandburg", "Temperature_ElMonte", "Inversion_base_height", "Pressure_gradient", "Inversion_temperature", "Visibility")
+
+# Segregate all continuous and categorical variables
+
+# Place all continuous vars in inputData_cont
+
+inputData_cont <- inputData[, c("pressure_height", "Wind_speed", "Humidity", "Temperature_Sandburg", "Temperature_ElMonte", "Inversion_base_height", "Pressure_gradient", "Inversion_temperature", "Visibility")]
+
+# Place all categorical variables in inputData_cat
+
+inputData_cat <- inputData[, c("Month", "Day_of_month", "Day_of_week")]
+
+# create the response data frame
+
+inputData_response <- data.frame(ozone_reading=inputData[, "ozone_reading"])
+
+response_name <- "ozone_reading"  # name of response variable
+
+response <- inputData[, response_name]  # response variable as a vector
+```
+
+```{R}
+# Generate plots: Density, Scatter, Box plots
+# Set up your working directory here, to a location where you want to store plots.
+# if (!require(e1071)) { install.packages("e1071"); library(e1071) }
+# #install.packages(e1071)
+library(e1071)
+for (k in names(inputData_cont)){
+
+   x <- as.numeric (inputData_cont[, k])
+
+  Skewness <- round(skewness(x), 2)  # calc skewness
+
+  dens <- density(x, na.rm=T)  # density func
+
+  par(mfrow=c(1, 3))  # setup plot-area in 3 columns
+
+ # Density plot
+
+  plot(dens, type="l", col="red", ylab="Frequency", xlab = k, main = paste(k, ": Density Plot"), sub=paste("Skewness: ", Skewness))
+
+  polygon(dens, col="red")
+
+  # scatterplot
+
+  plot(x, response, col="blue", ylab="Response", xlab = k, main = paste(k, ": Scatterplot"), pch=20)
+
+  abline(response ~ x)
+
+  # boxplot
+
+  boxplot(x, main=paste(k, ": Box Plot"), sub=paste("Outliers: ", paste(boxplot.stats(x)$out, collapse=" ")))
+
+  
+}
+```
+
+##Outlier analysis
+
+Method 1: If you choose to remove the outliers (not recommended)
+
+
+```{r}
+#x <- x[!x %in% boxplot.stats(x)$out]  # NOT run!
+```
+
+Method 2: Replace outliers with NAs, be be filled up later during missing value treatment.
+
+```{r}
+replace_outlier_with_missing <- function(x, na.rm = TRUE, ...) {
+
+  qnt <- quantile(x, probs=c(.25, .75), na.rm = na.rm, ...)  # get %iles
+
+  H <- 1.5 * IQR(x, na.rm = na.rm)  # outlier limit threshold
+
+  y <- x
+
+  y[x < (qnt[1] - H)] <- NA  # replace values below lower bounds
+
+  y[x > (qnt[2] + H)] <- NA  # replace values above higher bound
+  y  # returns treated variable
+
+}
+inputData_cont <- as.data.frame (sapply(inputData_cont, replace_outlier_with_missing))  # this will make outliers as NA 
+
+inputData <- cbind(inputData_response, inputData_cont, inputData_cat)  # column bind the response, continuous and categorical predictors
+```
+
+##Missing value treatment
+###Approaches for handling missing values
+
+Eliminating the variable: If a particular variable has more than 30% missing values, it is advisable to consider removing that variable altogether.
+Eliminating the observations: If there are missing values scattered through out your dataset and you have a good number of observations in your sample, you may choose to eliminate those observations with missing values. After doing this, if you find losing more than 30% of sample size, then you probably need to look for any particular variable that is contributing the most number of missing values.
+Imputation: Alternatively, you may also impute the missing values with one of these place holders.
+```{}
+Mean: Replace with mean
+
+Median: Replace with median
+
+Midrange: Replace with mid-range (max + min)/2
+
+Mode: Most frequent value
+
+Interpolation based: Interpolate based on a function for the variable.
+Based on distribution: Identify the distribution of the variable, and estimate using the distribution parameters.
+
+Predict the missing values: Based on treating the missing as a dependent variable in a regression model - See method 2 below.
+
+K Nearest Neighbours: Based on finding the observations that have the closest characteristics of the observation with missing value, through k-Nearest Neighbours algorithm. See method 3 below.
+```
+
+##Apply the missing value treatment
+###Method 1: Replace missing values with mean (NOT Run)
+```{r}
+#inputdata_cont_matrix <- sapply(inputData_cont, FUN=function(x){impute(x, mean)})  # impute missing values with the mean using 'impute' func from 'Hmisc' pkg
+
+#inputdata_cont <- as.data.frame(inputdata_cont_matrix)  # store as dataframe
+```
+
+###Method 2: Predict the missing values by modelling it as a dependent variable with a regression model based approach
+
+Replace all missing values with the mean, except for response variable. Build model with the variable for which missing value treatment needs to be done as the response variable, while the remaining variables can be used a predictors. 
+
+###Method 3: k-Nearest neighbor imputation method - Applied!
+
+```{r}
+# Impute all except the response variable.
+
+# if (!require(DMwR)) { install.packages("DMwR"); library(DMwR) }
+# install.packages("DMwR")
+
+library(DMwR)
+
+if( anyNA(inputData)) {
+
+  inputData <- knnImputation(inputData)  # missing value treatment
+
+}
+
+#if( anyNA(inputData)) {
+
+ # inputData[, !names(inputData) %in% response_name] <- knnImputation(inputData[, #!names(inputData) %in% response_name])  # missing value treatment
+
+#}
+```
+
+##Computing stepwise regression
+There are many functions and R packages for computing stepwise regression. These include:
+
+stepAIC() [MASS package], which choose the best model by AIC. It has an option named direction, which can take the following values: i) "both" (for stepwise regression, both forward and backward selection); "backward" (for backward selection) and "forward" (for forward selection). It return the best final model.
+```{r}
+# if (!require(MASS)) { install.packages("MASS"); library(MASS) }
+library(MASS)
+# Fit the full model 
+full.model <- lm( ozone_reading~., data = inputData)
+summary(full.model)
+# Stepwise regression model
+step.model <- stepAIC(full.model, direction = "both", 
+                      trace = FALSE)
+summary(step.model)
+AIC(full.model)
+AIC(step.model)
+```
+AIC=2k-2Ln(L)
+BIC=ln(n)k-2ln(L)
+
+the train() function [caret package] provides an easy workflow to perform stepwise selections using the leaps and the MASS packages. It has an option named method, which can take the following values:
+
+"leapBackward", to fit linear regression with backward selection
+"leapForward", to fit linear regression with forward selection
+"leapSeq", to fit linear regression with stepwise selection .
+You also need to specify the tuning parameter nvmax, which corresponds to the maximum number of predictors to be incorporated in the model.
+
+For example, you can vary nvmax from 1 to 5. In this case, the function starts by searching different best models of different size, up to the best 5-variables model. That is, it searches the best 1-variable model, the best 2-variables model, ., the best 5-variables models.
+
+The following example performs backward selection (method = "leapBackward"), using the swiss data set, to identify the best model for predicting Fertility on the basis of socio-economic indicators.
+
+
+ 
+As the data set contains only 5 predictors, we'll vary nvmax from 1 to 5 resulting to the identification of the 5 best models with different sizes: the best 1-variable model, the best 2-variables model, ., the best 5-variables model.
+
+We'll use 10-fold cross-validation to estimate the average prediction error (RMSE) of each of the 5 models (see Chapter @ref(cross-validation)). The RMSE statistical metric is used to compare the 5 models and to automatically choose the best one, where best is defined as the model that minimize the RMSE.
+
+```{r}
+# if (!require(caret)) { install.packages("caret"); library(caret) }
+#install.packages("caret")
+library(caret)
+# Set seed for reproducibility
+set.seed(123)
+# Set up repeated k-fold cross-validation
+train.control <- trainControl(method = "cv", number = 10)
+# Train the model
+step.model <- train(ozone_reading ~., data = inputData,
+                    method = "leapBackward", 
+                    tuneGrid = data.frame(nvmax = 1:5),
+                    trControl = train.control
+                    )
+
+
+step.model$results
+```
+The output above shows different metrics and their standard deviation for comparing the accuracy of the 5 best models. Columns are:
+
+nvmax: the number of variable in the model. For example nvmax = 2, specify the best 2-variables model
+RMSE and MAE are two different metrics measuring the prediction error of each model. The lower the RMSE and MAE, the better the model.
+Rsquared indicates the correlation between the observed outcome values and the values predicted by the model. The higher the R squared, the better the model.
+In our example, it can be seen that the model with 4 variables (nvmax = 4) is the one that has the lowest RMSE. You can display the best tuning values (nvmax), automatically selected by the train() function, as follow:
+
+```{r}
+step.model$bestTune
+```
+
+This indicates that the best model is the one with nvmax = 4 variables. The function summary() reports the best set of variables for each model size, up to the best 5-variables model.
+
+```{r}
+summary(step.model$finalModel)
+```
+
+An asterisk specifies that a given variable is included in the corresponding model. For example, it can be seen that the best 4-variables model contains Agriculture, Education, Catholic, Infant.Mortality (Fertility ~ Agriculture + Education + Catholic + Infant.Mortality).
+
+The regression coefficients of the final model (id = 4) can be accessed as follow:
+
+```{r}
+coef(step.model$finalModel, 4)
+```
+

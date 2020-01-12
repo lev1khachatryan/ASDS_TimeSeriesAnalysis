@@ -1,0 +1,270 @@
+---
+title: 'Econometrics : Homework 2'
+author: "Levon Khachatryan"
+output: html_document
+---
+```{r setup, include=FALSE}
+chooseCRANmirror(graphics=FALSE, ind=1)
+knitr::opts_chunk$set(echo = TRUE)
+```
+First of all we should install and import the appropriate libraries with these commands:
+```{r}
+if (!require(wooldridge)) { install.packages("wooldridge"); library(wooldridge) }
+attach(twoyear)
+```
+The type of above mentioned dataset is
+```{r}
+class(twoyear)
+```
+<br />
+We also wonder if there are null values in our dataset. We can verify this with the following command.
+<br />
+```{r}
+if (!any(is.na(twoyear))) {
+  print("There aren't any nullable values in our dataset")
+}else{
+  print("There are any nullable values in our dataset")
+}
+```
+
+## 1 
+Find the sample mean and standard deviation of stotal.
+```{r}
+mean(stotal)
+sd(stotal)
+```
+## 2 
+Run simple regressions of jc and univ on stotal. Are both college education variables statistically related to stotal? Explain.
+<br />
+My Regression models will be : 
+<br />
+<br />
+$stotal = \beta_{0} + \beta_{1}jc + \upsilon$ <br />And<br />
+$stotal = \beta_{0} + \beta_{1}univ + \upsilon$ <br /><br />
+```{r}
+model_jc <- lm(stotal ~ jc, data = twoyear)
+model_univ <- lm(stotal ~ univ, data = twoyear)
+summary(model_jc)$r.squared
+summary(model_univ)$r.squared
+```
+<br />
+<br />
+As we can see, there is a weak correlation between the **stotal and jc**  .But compared with the first pair in the second pair ( at the **stotal and univ**), there is more stronger correlation 
+<br />
+<br />
+We could do this without any regression models, with correlation coefficients:
+```{r}
+cor(stotal , jc)
+cor(stotal , univ)
+```
+<br />
+<br />
+Another way to see these relationships is following: We are creating the following multiple regression model
+<br />
+<br />
+$stotal = \beta_{0} + \beta_{1}jc + \beta_{2}univ + \upsilon$ <br /><br />
+```{r}
+model1 <- lm(stotal ~ jc + univ, data = twoyear)
+model_summary1 <- summary(model1)
+```
+<br />
+<br />
+And we can see these relationships with regression coefficients as well
+```{r}
+coef(model1)['jc']
+coef(model1)['univ']
+```
+<br />
+We could guess that relationship would be so , becouse **jc** is the total 2-year credits and **univ** is the 4-year credits but **stotal** is the total standardized test score, that's why it was expected
+<br />
+<br />
+```{r ,echo=FALSE}
+```
+## 3 
+Add ***stotal*** to equation
+<br />
+$log(wage) = \beta_{0} + \beta_{1}jc + \beta_{2}univ + \beta_{3}exper + \upsilon$ <br /><br />
+and test the hypothesis that the returns to two- and four-year colleges are the same against the alternative that the return to four-year colleges is greater
+<br />
+So our new model aftr adding stotal will be the following: <br />
+$log(wage) = \beta_{0} + \beta_{1}jc + \beta_{2}univ + \beta_{3}exper +  \upsilon$ <br /><br />
+As we know <br />
+jc: total 2-year credits <br />
+univ: total 4-year credits
+<br />
+<br />
+Therefore  , for checking if jc and univ are 0 and else hypothesis so that there are not 0 , we can do with anova by following way <br />
+```{r}
+model2 <- lm(lwage ~ jc + univ + exper + stotal, data = twoyear)
+model_summary2 <- summary(model2)
+model2_else <- lm(lwage ~exper + stotal, data = twoyear)
+model2_else_summary <- summary(model2_else)
+anova(model2_else, model2)
+```
+<br />
+This reveals that the effect of **jc and univ** is significant at any reasonable level, therefore we can say that $H_{0}$ hypothesis rejected which is coefficients of jc and univ are 0. SO finally we can say that the return to four-year colleges (*univ*) is greater.
+<br />
+Second way to see that.<br /><br />
+We can see this thing with following way as well: <br />
+```{r}
+model_with_jc <- lm(lwage ~ jc + exper + stotal, data = twoyear)
+model_with_univ <- lm(lwage ~ univ + exper + stotal, data = twoyear)
+anova(model_with_univ , model_with_jc)
+```
+
+```{r echo=FALSE}
+```
+## 4 
+Add stotal2 to the equation estimated in part (iii). Does a quadratic in the test score variable seem necessary?
+<br />
+<br />
+If we add stotal2 to  our model2 which we have creayed in 3-rd example we will obtain the following model :
+<br />
+<br />
+$log(wage) = \beta_{0} + \beta_{1}jc + \beta_{2}univ + \beta_{3}exper + \beta_{4}stotal + \beta_{5}stotal^2 + \upsilon$
+<br />
+<br />
+```{r}
+model3 <- update(model2, formula = . ~ . + I(stotal^2))
+model_summary3 <- summary(model3)
+```
+We can do comparison of two regression models using F-test
+<br />
+<br />
+Null Hypothesis : Restricted model (model2) is statistically better than Unrestricted model (model3)
+<br />
+<br />
+Formula
+<br />
+$F-test=\frac{(R^2_{Unrestricted}-R^2_{Restricted})/q}{(1-R^2_{Unrestricted})/(n-k_{Unrestricted}-1)}$ <br /><br />
+<br />
+<br />
+Where : <br />
+**q** is the number of restrictions : q = (numbe rof regressors in model3 - number of regressors in model2) <br />
+**$R^2_{Unrestricted}$** is the $R^2$ of unrestricted model (model3) <br />
+**$R^2_{Restricted}$** is the $R^2$ of restricted model (model2) <br />
+**n** is the number of datapoint of twoyear dataset<br />
+**k** is the number of regressors in unrestricted model (model3)
+<br />
+<br />
+With take into account this formula , we will obtain:
+<br />
+<br />
+```{r}
+R2Unrestricted <- model_summary2$r.squared
+R2Restricted <- model_summary3$r.squared
+q <- 1 # 5-4
+n <- nrow(twoyear)
+k <- 5
+Fstat <- ((R2Unrestricted-R2Restricted)/q)/((1-R2Unrestricted)/(n-k-1))
+Fstat # F-test (computed) = -0.1633614
+```
+<br />
+<br />
+The null hypothesis is rejected if the F calculated from the data is greater than the critical value of the F-distribution for some desired false-rejection probability (e.g. 0.05)
+<br />
+```{e}
+qf(0.95, q, n-k-1) #F-test (critical) = 3.842835
+```
+<br />
+Since F-test(computed) < F-test (critical)   
+We can not reject the null hypothesis and infer that restricted model (model2) is better
+<br />
+<br />
+*Second method for doing comparison between 2 regression models*
+<br />
+<br />
+We can compare this two models (model2 and model3) with anova
+<br />
+<br />
+```{r}
+anova(model3, model2)
+```
+<br />
+<br />
+This reveals that the effect of $stotal^2$ isn't significant at any reasonable level
+<br />
+<br />
+```{r echo=FALSE}
+```
+## 5
+Add the interaction terms **stotal * jc** and **stotal * univ** to the equation from part (iii). Are these terms jointly significant?
+<br />
+<br />
+```{r}
+model4 <- update(model2, formula = . ~ . + I(stotal*jc) + I(stotal*univ))
+model_summary4 <- summary(model4)
+```
+<br />
+<br />
+As we know the standard regression output as provided by summary() , indicates individual significance of each regressor and joint significance of all regressors in the form of **$t$** and **$F$** statistics, respectively. Therefore if we want to describe joint significance of **stotal * jc** and **stotal * univ** we should take into consideration **$F$** statistics only.
+<br />
+<br />
+The F-test for overall significance has the following two hypotheses:
+<br />
+The **null hypothesis** states that the model with no independent variables fits the data as well as your model.<br />
+The **alternative hypothesis** says that your model fits the data better than the intercept-only model<br /><br />
+Compare the p-value for the F-test to your significance level. If the p-value is less than the significance level, your sample data provide sufficient evidence to conclude that your regression model fits the data better than the model with no independent variables. This finding is good news because it means that the independent variables in your model improve the fit!<br /><br />
+F-test of overall significance assesses all of the coefficients jointly whereas the t-test for each coefficient examines them individually. For example, the overall F-test can find that the coefficients are significant jointly while the t-tests can fail to find significance individually.
+<br /><br />
+Formula
+<br /><br />
+$F=\frac{R^2/(k-1)}{(1-R^2)/(n-k)}$<br /><br />
+**n** is the number of datapoint of twoyear dataset<br />
+**k** is the number of regressors in unrestricted model (model3)
+<br /><br />
+```{r}
+model_summary4
+```
+Now let's see model2 summary and compare them to knowing are added term jointly significant<br /><br />
+```{r}
+model_summary2
+```
+<br />
+<br />
+As we see, comparing with model2's **F-statistics** , model4's  **F-statistics**  has been decreased but **p-value** stayed the same therefore we can say that **stotal * jc** and **stotal * univ** are not jointly significant.
+```{r echo=FALSE}
+```
+## 6
+What would be your final model that controls for ability through the use of stotal?  Justify your answer.
+<br />
+<br />
+I think it would be good if we could find the best model that matches our problem. We can find the best model in different ways, one of them is a stepwise regression. There are many functions and R packages for computing stepwise regression. These include: stepAIC() [MASS package], which choose the best model by AIC. It has an option named direction, which can take the following values: i) "both" (for stepwise regression, both forward and backward selection); "backward" (for backward selection) and "forward" (for forward selection). It return the best final model.
+<br />
+<br />
+But firstly we must be sure that our dataset doesn't contain nullable values. So let's check if there are null values and if there is , replace them all by approximately true values
+<br /><br />
+```{r}
+library(DMwR)
+if( anyNA(twoyear)) {
+  
+  twoyear <- knnImputation(twoyear)  # missing value treatment
+  
+}
+```
+<br />
+<br />
+Now, since our dataset does not contain a null value, we can start working with the model.
+<br />
+<br />
+```{r}
+if (!require(MASS)) { install.packages("MASS"); library(MASS) }
+library(MASS)
+# Fit the full model 
+full.model <- lm( lwage~., data = twoyear)
+summary(full.model)
+# Stepwise regression model
+step.model <- stepAIC(full.model, direction = "backward", trace=FALSE)
+summary(step.model)
+AIC(full.model)
+AIC(step.model)
+```
+I will choose the regressors that are the most significant in **step.model**.
+```{r}
+best_model <- lm(lwage ~ female + phsrank + exper + jc + univ + stotal + medcity + lgcity +  sublg + vlgcity + subvlg + nc + south)
+summary(best_model)
+```
+Since *p value* of F-statistics is small than any significant level , we can say that our model can correctly represent our data.
+<br />
+<br />
+THANK YOU
